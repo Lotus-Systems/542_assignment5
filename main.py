@@ -41,12 +41,18 @@ if __name__ == '__main__':
     columns = ['title', 'text', 'subject', 'date']
 
     # Read the CSV file
-    True_df = pd.read_csv('True.csv')
-    Fake_df = pd.read_csv('Fake.csv')
+    True_f = pd.read_csv('True.csv')
+    Fake_f = pd.read_csv('Fake.csv')
+    print("read csv files")
+
+    # Create a DataFrame
+    True_df = pd.DataFrame(True_f)
+    Fake_df = pd.DataFrame(Fake_f)
 
     # Fill null values with the mean of the column
     True_df = handle_null_values(True_df)
     Fake_df = handle_null_values(Fake_df)
+    print("handled null values")
 
     True_outliers = []
     Fake_outliers = []
@@ -59,11 +65,14 @@ if __name__ == '__main__':
         # Decide what to do with outliers
         True_outliers += handle_outliers(True_df, column)
         Fake_outliers += handle_outliers(Fake_df, column)
+        print("handled outliers")
         # desicretize column
         True_desicretized_df += discretize_column(True_df, column)
         Fake_desicretized_df += discretize_column(Fake_df, column)
+        print("desicretized column")
         # normalize column
         True_normalized_df += normalize_column(True_df, column)
         Fake_normalized_df += normalize_column(Fake_df, column)
+        print("normalized column")
 
 
