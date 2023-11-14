@@ -1,15 +1,14 @@
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
+import datetime as dt
+import textacy
+import textacy.preprocessing as tp
 
-def handle_null_values(df):
-    # Fill null values with the mean of the column
-    df.fillna(df.mean(), inplace=True)
-    return df
 
 def handle_outliers(df, column):
-    # Assuming 'df' is your DataFrame and 'column' is the column to check for outliers
-    sns.boxplot(x=df[column])
+    sns.boxplot(y=df[column])
 
     # Identify outliers
     Q1 = df[column].quantile(0.25)
@@ -23,19 +22,61 @@ def handle_outliers(df, column):
     return outliers
 
 
-def discretize_column(df, column):
-    # Assuming 'df' is your DataFrame and 'column' is the column to discretize
-    bins = [0, 25, 50, 75, 100]  # define your bins
-    labels = ['Group1', 'Group2', 'Group3', 'Group4']  # define labels for each bin
-    df['discrete_column'] = pd.cut(df[column], bins=bins, labels=labels)
+def convert_date(df):
+    df['date'] = pd.to_datetime(df['date'])
+    #for i in range(len(df['date'])):
+        #print(df['date'][i])
+        #df['date'][i] = pd.to_datetime(df['date'][i])
+        #print(df['date'][i])
+
+    return df
+
+
+# Date is the only column that can be desicretized
+def discretize_date(df):
+    labels = ["January", "February", "March", "April", "May", "June", "July", "August", "September",
+              "October", "November", "December"]
+    df['discrete_date'] = pd.cut(df['date'].dt.month, 12, labels=labels)
     return df
 
 
 def normalize_column(df, column):
-    # Assuming 'df' is your DataFrame and 'column' is the column to normalize
     scaler = MinMaxScaler()
     df['normalized_column'] = scaler.fit_transform(df[[column]])
     return df
+
+
+# export dataframe to csv
+def export_csv(df, name):
+    df.to_csv(name + '.csv', index=False)
+
+
+# normalize text and titles
+def normalize_text(df):
+    for i in range(len(df['text'])):
+        df['text'][i] = tp.normalize.normalize_whitespace(df['text'][i])
+        df['text'][i] = tp.normalize.normalize_hyphenated_words(df['text'][i])
+        df['text'][i] = tp.normalize.normalize_quotation_marks(df['text'][i])
+        df['text'][i] = tp.normalize.normalize_unicode(df['text'][i])
+        df['text'][i] = tp.normalize.normalize_whitespace(df['text'][i])
+        df['text'][i] = tp.normalize.remove_accents(df['text'][i])
+        df['text'][i] = tp.normalize.remove_punctuation(df['text'][i])
+        df['text'][i] = tp.normalize.remove_stopwords(df['text'][i])
+        df['text'][i] = tp.normalize.remove_punctuation(df['text'][i])
+
+    for i in range(len(df['title'])):
+        df['title'][i] = tp.normalize.normalize_whitespace(df['title'][i])
+        df['title'][i] = tp.normalize.normalize_hyphenated_words(df['title'][i])
+        df['title'][i] = tp.normalize.normalize_quotation_marks(df['title'][i])
+        df['title'][i] = tp.normalize.normalize_unicode(df['title'][i])
+        df['title'][i] = tp.normalize.normalize_whitespace(df['title'][i])
+        df['title'][i] = tp.normalize.remove_accents(df['title'][i])
+        df['title'][i] = tp.normalize.remove_punctuation(df['title'][i])
+        df['title'][i] = tp.normalize.remove_stopwords(df['title'][i])
+        df['title'][i] = tp.normalize.remove_punctuation(df['title'][i])
+
+    return df
+
 
 if __name__ == '__main__':
     columns = ['title', 'text', 'subject', 'date']
@@ -49,30 +90,25 @@ if __name__ == '__main__':
     True_df = pd.DataFrame(True_f)
     Fake_df = pd.DataFrame(Fake_f)
 
-    # Fill null values with the mean of the column
-    True_df = handle_null_values(True_df)
-    Fake_df = handle_null_values(Fake_df)
-    print("handled null values")
+    # Convert date to datetime
+    True_df = convert_date(True_df)
+    Fake_df = convert_date(Fake_df)
+    print("converted date format")
+    #counts = pd.Series(index=True_df['date'], data=np.array(True_df.count)).resample('M').count()
+    #print(counts)
 
-    True_outliers = []
-    Fake_outliers = []
-    True_desicretized_df = pd.DataFrame()
-    Fake_desicretized_df = pd.DataFrame()
-    True_normalized_df = pd.DataFrame()
-    Fake_normalized_df = pd.DataFrame()
+    # Discretize date
+    True_df = discretize_date(True_df)
+    Fake_df = discretize_date(Fake_df)
+    #print("desicretized date")
+    #print(True_df)
 
-    for column in columns:
-        # Decide what to do with outliers
-        True_outliers += handle_outliers(True_df, column)
-        Fake_outliers += handle_outliers(Fake_df, column)
-        print("handled outliers")
-        # desicretize column
-        True_desicretized_df += discretize_column(True_df, column)
-        Fake_desicretized_df += discretize_column(Fake_df, column)
-        print("desicretized column")
-        # normalize column
-        True_normalized_df += normalize_column(True_df, column)
-        Fake_normalized_df += normalize_column(Fake_df, column)
-        print("normalized column")
+    # Normalize text
+    True_df = normalize_text(True_df)
+    Fake_df = normalize_text(Fake_df)
+    print("normalized text")
 
+    # Export to csv
+    # export_csv(True_df, "True_modified")
+    # export_csv(Fake_df, "Fake_modified")
 
